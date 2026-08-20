@@ -3,13 +3,18 @@
     python deck/build.py            # writes deck/slides.html
     python deck/build.py --pdf      # also writes deck/Sentinel.pdf
 """
+import base64
 import pathlib
 import subprocess
 import sys
 
 HERE = pathlib.Path(__file__).parent
-sys.path.insert(0, str(HERE))
-from _images import IMAGES  # noqa: E402  (generated blob of base64 screenshots)
+
+# Screenshots are inlined as data URIs so the deck is a single self-contained file.
+IMAGES = {
+    path.name: "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
+    for path in sorted((HERE / "assets").glob("*.png"))
+}
 
 def _arg(flag, default):
     return sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv else default
