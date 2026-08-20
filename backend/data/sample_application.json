@@ -1,0 +1,35 @@
+{
+  "applicant": {
+    "name": "Nisha Reddy",
+    "state": "TS",
+    "monthly_income": 120000,
+    "email": "user9320@mail.com",
+    "phone": "9730699660"
+  },
+  "loan": {
+    "amount": 602000.0,
+    "tenure_months": 48,
+    "purpose": "business"
+  },
+  "device": {
+    "device_id": "dev-743782",
+    "ip": "49.204.48.25",
+    "ip_state": "TS",
+    "os": "ios",
+    "is_emulator": false,
+    "vpn_or_proxy": true
+  },
+  "session": {
+    "duration_s": 81,
+    "typing_speed_cps": 4.42,
+    "paste_events": 2,
+    "form_corrections": 0,
+    "tab_switches": 4,
+    "hour_of_day": 18
+  },
+  "history": {
+    "email_domain_age_days": 35,
+    "account_age_days": 690,
+    "prior_defaults": 0
+  }
+}
