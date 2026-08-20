@@ -1,0 +1,458 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>Sentinel — Demo Runbook</title><style>
+:root{--ink:#14140f;--ink-2:#42413d;--muted:#82817a;--line:#e0dfd9;--panel:#f7f7f4;
+      --accent:#2a78d6;--allow:#0ca30c;--step:#c98500;--review:#c2643a;--block:#d03b3b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Inter,sans-serif;color:var(--ink);
+     font-size:11pt;line-height:1.5;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;padding:16mm 15mm;margin:0 auto 6mm;background:#fff}
+.page+.page{page-break-before:always}
+pre,table,.step,.box,.note,h2,h3{break-inside:avoid;page-break-inside:avoid}
+h2,h3{break-after:avoid;page-break-after:avoid}
+h1{font-size:26pt;line-height:1.15;letter-spacing:-.02em;margin-bottom:6pt}
+h2{font-size:15pt;margin:20pt 0 8pt;letter-spacing:-.01em;padding-bottom:5pt;border-bottom:2px solid var(--ink)}
+h2:first-of-type{margin-top:14pt}
+h3{font-size:11.5pt;margin:14pt 0 5pt}
+p{margin-bottom:8pt;color:var(--ink-2)}
+.lead{font-size:12pt;color:var(--ink-2);margin-bottom:14pt}
+.kicker{font-size:9pt;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:8pt}
+ul,ol{margin:0 0 10pt 0;padding-left:16pt;color:var(--ink-2)}
+li{margin-bottom:5pt}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5pt}
+code{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:0 3px}
+pre{background:#14140f;color:#f2f1ea;border-radius:6px;padding:10pt 12pt;margin:8pt 0;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9pt;line-height:1.6;
+    white-space:pre-wrap;word-break:break-word}
+pre .c{color:#8f8e85}
+pre b{color:#7fd18a;font-weight:400}
+table{width:100%;border-collapse:collapse;margin:8pt 0;font-size:10pt}
+th{text-align:left;font-size:8.5pt;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+   font-weight:700;padding:6pt 7pt;border-bottom:1.5px solid var(--line)}
+td{padding:6pt 7pt;border-bottom:1px solid var(--line);color:var(--ink-2);vertical-align:top}
+td b,li b{color:var(--ink)}
+.note{border-left:3px solid var(--accent);background:#2a78d60d;padding:9pt 12pt;border-radius:0 5px 5px 0;margin:10pt 0;font-size:10pt}
+.warn{border-left-color:var(--step);background:#c985000f}
+.box{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:10pt 12pt;margin:8pt 0}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10pt}
+.step{display:grid;grid-template-columns:22pt 1fr;gap:8pt;margin-bottom:12pt}
+.n{width:19pt;height:19pt;border-radius:50%;background:var(--ink);color:#fff;font-size:10pt;font-weight:700;
+   display:flex;align-items:center;justify-content:center}
+.step h3{margin-top:1pt}
+.foot{margin-top:16pt;padding-top:7pt;border-top:1px solid var(--line);font-size:8.5pt;color:var(--muted);
+      display:flex;justify-content:space-between}
+.pill{display:inline-block;padding:1pt 7pt;border-radius:99px;font-size:8pt;font-weight:700;border:1px solid}
+.p-allow{color:var(--allow);border-color:var(--allow)}
+.p-step{color:var(--step);border-color:var(--step)}
+.p-block{color:var(--block);border-color:var(--block)}
+.small{font-size:9.5pt;color:var(--muted)}
+@page{size:A4;margin:16mm 15mm}
+@media print{.page{width:auto;padding:0;margin:0}}
+</style></head>
+<body><div class="page">
+<div class="kicker">Synchrony Hackathon &middot; Real-time fraud detection in digital lending</div>
+<h1>Sentinel &mdash; demo runbook</h1>
+<p class="lead">Everything needed to install the project, run the backend and frontend, and record the
+demo. Follow it top to bottom; every command is copy-paste ready and the expected output is shown
+after each one.</p>
+
+<h2>What the demo shows</h2>
+<p>Sentinel scores a loan application in about 20&nbsp;ms and returns one of four decisions, together
+with the reasons behind it. The recording walks through a fraud ring being caught by the system as
+applications arrive, then an analyst confirming fraud and the very next application from that device
+being blocked automatically.</p>
+
+<table>
+  <thead><tr><th>Decision</th><th>Meaning</th><th>When</th></tr></thead>
+  <tbody>
+    <tr><td><span class="pill p-allow">ALLOW</span></td><td>Application continues normally</td><td>risk &lt; 0.35</td></tr>
+    <tr><td><span class="pill p-step">STEP UP</span></td><td>Ask for OTP or a liveness check</td><td>risk &ge; 0.35</td></tr>
+    <tr><td><span class="pill" style="color:#c2643a;border-color:#c2643a">REVIEW</span></td><td>Held for a fraud analyst</td><td>risk &ge; 0.60</td></tr>
+    <tr><td><span class="pill p-block">BLOCK</span></td><td>Blocked and raised as a fraud case</td><td>risk &ge; 0.85, or a hard-block rule</td></tr>
+  </tbody>
+</table>
+
+<h2>What you need before you start</h2>
+<table>
+  <thead><tr><th>Requirement</th><th>Version</th><th>Check with</th><th>Needed for</th></tr></thead>
+  <tbody>
+    <tr><td><b>Python</b></td><td>3.11 or newer</td><td><code>python3 --version</code></td><td>Backend API and the ML models</td></tr>
+    <tr><td><b>Node.js + npm</b></td><td>18 or newer</td><td><code>node --version</code></td><td>React console</td></tr>
+    <tr><td><b>Git</b></td><td>any</td><td><code>git --version</code></td><td>Cloning the repository</td></tr>
+    <tr><td><b>A terminal</b></td><td>&mdash;</td><td>&mdash;</td><td>Three tabs or windows are used</td></tr>
+    <tr><td><b>A browser</b></td><td>Chrome / Edge / Safari</td><td>&mdash;</td><td>The console runs at localhost:5173</td></tr>
+    <tr><td><b>Disk space</b></td><td>about 600 MB</td><td>&mdash;</td><td>Python venv (~450 MB, mostly scikit-learn) and node_modules</td></tr>
+    <tr><td><b>Internet</b></td><td>first install only</td><td>&mdash;</td><td>Downloading packages. The demo itself runs fully offline</td></tr>
+  </tbody>
+</table>
+
+<h3>Not required</h3>
+<ul>
+  <li><b>No cloud account, no API key.</b> Without LLM credentials the AI layer falls back to a
+      deterministic explanation, which is a built-in part of the product. The console shows
+      <code>rule_based_fallback</code> as the source so this is visible and honest on camera.</li>
+  <li><b>No database server.</b> SQLite is used by default and is created automatically.</li>
+  <li><b>No Docker.</b> Only needed for the optional PostgreSQL + pgvector path (page 6).</li>
+</ul>
+
+<div class="note"><b>Windows users:</b> the commands below use <code>make</code>, which is not installed by
+default. Page 6 lists the equivalent commands to run directly, or use WSL / Git Bash.</div>
+</div><div class="page">
+<div class="kicker">Part 1</div>
+<h1 style="font-size:20pt">One-time setup</h1>
+<p class="lead">Roughly five minutes, most of it package downloads. You only do this once.</p>
+
+<div class="step"><div class="n">1</div><div>
+<h3>Get the code</h3>
+<pre>git clone https://github.com/Deva2712/synchro.git
+cd synchro</pre>
+</div></div>
+
+<div class="step"><div class="n">2</div><div>
+<h3>Create the configuration file</h3>
+<p>The project reads every setting from environment variables, so nothing sensitive lives in the code.
+Copy the template and fill in three values.</p>
+<pre>cp .env.example .env
+python3 -c "import secrets; print('JWT_SECRET=' + secrets.token_urlsafe(32))"</pre>
+<p>Open <code>.env</code> and set these three lines (the JWT secret is the value printed above):</p>
+<pre>JWT_SECRET=<span class="c">&lt;paste the generated value here&gt;</span>
+SEED_ADMIN_PASSWORD=SentinelDemo!2026
+SEED_ANALYST_PASSWORD=SentinelDemo!2026</pre>
+<p class="small">Any password of 8+ characters works. These two accounts are created the first time the
+API starts. <code>.env</code> is git-ignored, so it is never committed.</p>
+</div></div>
+
+<div class="step"><div class="n">3</div><div>
+<h3>Install both stacks</h3>
+<pre>make setup</pre>
+<p>This creates a Python virtual environment in <code>.venv</code>, installs the backend requirements,
+and runs <code>npm install</code> for the console. Expected: pip and npm output ending without errors.</p>
+<div class="note warn"><b>If npm skips the dev packages</b> (Vite fails to start later with
+"Could not resolve 'vite'"), your shell has <code>NODE_ENV=production</code> set. Fix it with:
+<pre style="margin-top:6pt">cd frontend &amp;&amp; npm install --include=dev &amp;&amp; cd ..</pre></div>
+</div></div>
+
+<div class="step"><div class="n">4</div><div>
+<h3>Verify the install</h3>
+<pre>make test</pre>
+<p>Expected output:</p>
+<pre><b>20 passed</b> in 1.5s</pre>
+<p>If all 20 pass, the decision engine, rules, PII masking, authentication and the learning loop are
+all working. This is also a good thing to show on camera at the start of the recording.</p>
+</div></div>
+
+<h2>What gets created on first run</h2>
+<table>
+  <thead><tr><th>File</th><th>What it is</th></tr></thead>
+  <tbody>
+    <tr><td><code>sentinel.db</code></td><td>SQLite database &mdash; applications, users, fraud typologies</td></tr>
+    <tr><td><code>sentinel_model.joblib</code></td><td>Trained models (logistic regression + isolation forest) with their metrics</td></tr>
+    <tr><td><code>sentinel_embedder.joblib</code></td><td>Embedding model used for typology search</td></tr>
+  </tbody>
+</table>
+<p class="small">All three are git-ignored and are rebuilt automatically if deleted. Deleting
+<code>sentinel.db</code> is how you reset the demo to a clean state.</p>
+</div><div class="page">
+<div class="kicker">Part 2</div>
+<h1 style="font-size:20pt">Running the backend and frontend</h1>
+<p class="lead">Three terminal tabs, all opened in the project folder. Start them in this order.</p>
+
+<h2>Terminal 1 &mdash; the backend API</h2>
+<pre>make api</pre>
+<p>Starts FastAPI on <b>http://127.0.0.1:8000</b>. On the very first start it trains the models from
+synthetic traffic (about 5 seconds) and loads the fraud typology knowledge base.</p>
+<pre><span class="c">INFO  sentinel  Model ready: {'roc_auc': 0.9386, 'pr_auc': 0.8613, ...}</span>
+<span class="c">INFO  uvicorn   Uvicorn running on http://127.0.0.1:8000</span></pre>
+<p><b>Check it:</b> open <code>http://127.0.0.1:8000/docs</code> &mdash; the interactive OpenAPI page listing
+every endpoint. Worth showing on camera: it proves the project is API-first and not just a UI.</p>
+
+<h2>Terminal 2 &mdash; the analyst console</h2>
+<pre>make web</pre>
+<p>Starts Vite on <b>http://localhost:5173</b>. It proxies <code>/v1</code> calls through to the API, so the
+browser only ever talks to one origin and no API URL is hardcoded in the bundle.</p>
+<pre><span class="c">VITE v5.4.21  ready in 101 ms</span>
+<span class="c">-&gt;  Local:   http://localhost:5173/</span></pre>
+<p>Open that address and sign in:</p>
+<table>
+  <thead><tr><th>Role</th><th>Email</th><th>Password</th><th>Can do</th></tr></thead>
+  <tbody>
+    <tr><td>Analyst</td><td><code>analyst@sentinel.local</code></td><td>as set in <code>.env</code></td><td>View the queue, open cases, give verdicts</td></tr>
+    <tr><td>Admin</td><td><code>admin@sentinel.local</code></td><td>as set in <code>.env</code></td><td>Everything above, plus retraining the model</td></tr>
+  </tbody>
+</table>
+<p class="small">Sign in as <b>admin</b> for the recording so the "Retrain from feedback" button is
+visible in the top bar.</p>
+
+<h2>Terminal 3 &mdash; simulated application traffic</h2>
+<pre>make demo</pre>
+<p>Sends 60 realistic applications through the API at about 5 per second, including a burst of six
+applications from one device under six different names &mdash; the fraud ring. Each line printed is a
+real API response:</p>
+<pre>APP-999EFBB86C  <b>BLOCK</b>    risk=0.88   18.9ms  Emulator/rooted device behind a VPN or proxy
+APP-3262E868F5  <b>ALLOW</b>    risk=0.06   19.7ms  Loan amount vs declared income raises risk
+APP-44124986C0  <b>BLOCK</b>    risk=0.89   17.4ms  Same device used by 5 different applicant names in 24h
+
+Decision mix: {'ALLOW': 50, 'STEP_UP': 3, 'REVIEW': 3, 'BLOCK': 4}</pre>
+<p>The console updates every two seconds, so the queue fills in live while this runs. Options you can
+add: <code>--n 100</code> for more applications, <code>--rate 2</code> to slow it down for the camera,
+<code>--ring</code> to force the fraud-ring burst (already on by default in <code>make demo</code>).</p>
+
+<div class="note"><b>Ports already in use?</b> Change them:
+<code>.venv/bin/uvicorn backend.app.main:app --port 8001</code> and
+<code>cd frontend &amp;&amp; npx vite --port 5174</code>. If you change the API port, also update
+<code>API_URL</code> for the simulator and the proxy target in <code>frontend/vite.config.js</code>.</div>
+</div><div class="page">
+<div class="kicker">Part 3</div>
+<h1 style="font-size:20pt">The demo script</h1>
+<p class="lead">About 5&ndash;6 minutes of recording. Each scene lists what to do, and what to say while
+doing it.</p>
+
+<div class="box"><b>Before you hit record:</b> reset to a clean state so the numbers on screen are
+tidy and the ring is the obvious story.
+<pre style="margin-bottom:0">rm -f sentinel.db          <span class="c"># clears all previous applications</span>
+make api                   <span class="c"># restart terminal 1</span></pre></div>
+
+<div class="step"><div class="n">1</div><div>
+<h3>The problem &mdash; 30 seconds</h3>
+<p><i>"Digital lending fraud changes every few weeks, but rule releases take months. And every genuine
+customer wrongly blocked is a customer lost silently. So the system has to decide in milliseconds,
+keep learning, and explain itself."</i></p>
+<p>Show the terminal running <code>make test</code> &mdash; 20 tests passing &mdash; then move to the browser.</p>
+</div></div>
+
+<div class="step"><div class="n">2</div><div>
+<h3>The API is the product &mdash; 30 seconds</h3>
+<p>Open <code>http://127.0.0.1:8000/docs</code>. Point out <code>POST /v1/applications/score</code>,
+the case endpoints, the feedback endpoint and the retrain endpoint.</p>
+<p><i>"Everything is an API. The console is just one client &mdash; a loan origination system would be
+another."</i></p>
+</div></div>
+
+<div class="step"><div class="n">3</div><div>
+<h3>Live traffic &mdash; 60 seconds</h3>
+<p>Sign in to the console as admin. Run <code>make demo</code> in terminal 3 and let the queue fill.</p>
+<p>Point at the KPI row: <i>"83% straight through with no friction, and the p95 decision time is
+22 milliseconds &mdash; this runs inside the application flow, not in a nightly batch."</i></p>
+</div></div>
+
+<div class="step"><div class="n">4</div><div>
+<h3>The fraud ring &mdash; 90 seconds</h3>
+<p>Click the <b>BLOCK</b> filter. Several rows will read <i>"Same device used by 5 different applicant
+names in 24h"</i>.</p>
+<p><i>"Each of these applications looks fine on its own &mdash; no emulator, normal typing, an old account.
+A per-application rule engine passes all of them. What gives the ring away is the pattern across them,
+and we only see it because device and IP velocity are counted at the moment of scoring."</i></p>
+</div></div>
+
+<div class="step"><div class="n">5</div><div>
+<h3>The case file &mdash; 90 seconds</h3>
+<p>Click one of those rows. Walk down the right-hand panel:</p>
+<ul>
+  <li><b>Score composition</b> &mdash; how the ML model, the anomaly model and the rules each contributed.</li>
+  <li><b>Evidence</b> &mdash; rule hits in plain English, plus the model's own per-feature contributions in log-odds.</li>
+  <li><b>Matched typology</b> &mdash; "Device farm / application ring", found by vector search, with the control that stops it.</li>
+  <li><b>AI analyst summary</b> &mdash; and the line underneath it: <i>generated by &lt;source&gt;, explanation only,
+      the decision was made by the rules and models.</i></li>
+</ul>
+<p><i>"The language model explains, it never decides. If it is slow or down, the wording changes &mdash; the
+decision does not."</i></p>
+</div></div>
+
+<div class="step"><div class="n">6</div><div>
+<h3>The learning loop &mdash; 60 seconds</h3>
+<p>Click <b>Confirm fraud</b>. Then in terminal 3 run <code>make demo</code> again.</p>
+<p>New applications from that same device now come back <span class="pill p-block">BLOCK</span> with the
+first reason <i>"Device or IP previously confirmed as fraud by an analyst"</i>.</p>
+<p><i>"One analyst click protects the whole portfolio from the next application onwards &mdash; no retrain,
+no deployment."</i></p>
+</div></div>
+
+<div class="step"><div class="n">7</div><div>
+<h3>Retraining, safely &mdash; 45 seconds</h3>
+<p>Click <b>Retrain from feedback</b> in the top bar. The banner reports the labelled case count and
+the ROC-AUC before and after.</p>
+<p><i>"Retraining a live credit control is risky, so a new model is only promoted if it is not
+meaningfully worse than the current one. Here it was within noise, so the existing model kept
+serving &mdash; and the API says so."</i></p>
+</div></div>
+</div><div class="page">
+<div class="kicker">Part 4</div>
+<h1 style="font-size:20pt">Recording and submitting</h1>
+
+<h2>Recording checklist</h2>
+<ul>
+  <li>Record at <b>1920&times;1080</b> or the full screen. Zoom the browser to 100&ndash;110% so text is readable
+      after compression.</li>
+  <li>Arrange the window so the console fills most of the screen, with one terminal visible for the
+      simulator output.</li>
+  <li>Keep it to <b>5&ndash;7 minutes</b>. Speak over it &mdash; a silent screen recording is much weaker.</li>
+  <li>Tools: QuickTime (macOS, <code>File &rarr; New Screen Recording</code>), Xbox Game Bar
+      (Windows, <code>Win+G</code>), or OBS on any platform.</li>
+  <li>Close anything personal &mdash; notifications, other tabs, bookmarks bar.</li>
+</ul>
+
+<h2>Files to submit</h2>
+<table>
+  <thead><tr><th>File</th><th>What it is</th></tr></thead>
+  <tbody>
+    <tr><td><code>&lt;rollnumber&gt;.pdf</code></td><td>The 18-slide solution deck (<code>deck/Sentinel.pdf</code>, renamed)</td></tr>
+    <tr><td><code>&lt;rollnumber&gt;.mp4</code></td><td>The screen recording</td></tr>
+    <tr><td><code>&lt;rollnumber&gt;.zip</code></td><td>Both of the above, zipped together</td></tr>
+  </tbody>
+</table>
+
+<p>Put your name and roll number on the deck and rebuild it:</p>
+<pre>.venv/bin/python deck/build.py --pdf --author "Your Name" --roll "21XX1234"
+cp deck/Sentinel.pdf ~/Desktop/21XX1234.pdf</pre>
+
+<p>Then zip and email:</p>
+<pre>cd ~/Desktop &amp;&amp; zip 21XX1234.zip 21XX1234.pdf 21XX1234.mp4</pre>
+
+<div class="note"><b>Deadline:</b> email to <code>Technologyinterns@syf.com</code> before
+<b>12:00 PM IST on 21 August</b>. Anything later is not accepted. Use only the roll number in the
+file names, as the instructions require.</div>
+
+<h2>Questions you should be ready for</h2>
+<table>
+  <thead><tr><th>Question</th><th>Short answer</th></tr></thead>
+  <tbody>
+    <tr><td>Why logistic regression and not something bigger?</td>
+        <td>Because it is linear, every feature's contribution is exact arithmetic
+            (<code>coefficient &times; scaled value</code>), so the explanation is the decision itself and not
+            an approximation. In a regulated credit process that matters more than a few points of AUC.</td></tr>
+    <tr><td>Why an isolation forest as well?</td>
+        <td>It uses no labels at all, so it still fires on fraud patterns nobody has labelled yet &mdash;
+            the "new fraud vector" part of the problem statement.</td></tr>
+    <tr><td>Where does the LLM sit?</td>
+        <td>After the decision, off the customer path. It explains; it cannot change or delay a decision.</td></tr>
+    <tr><td>Is the data real?</td>
+        <td>No &mdash; it is synthetic, and deliberately hard: 40% of fraud cases show only some warning
+            signs, 1.5% of labels are wrong, and genuine users share devices and use VPNs. An early
+            version scored AUC 1.00, which just meant the fake fraud was too obvious.</td></tr>
+    <tr><td>How would this scale?</td>
+        <td>The API is stateless, so it scales horizontally. The two changes needed are Redis-based
+            rate limiting and pgvector for typology search &mdash; both are listed in the README.</td></tr>
+    <tr><td>What about false positives?</td>
+        <td>That is why there are four outcomes instead of two. Suspicion buys an OTP; blocking needs
+            strong evidence. The false-positive rate measured on held-out data is 3.9%.</td></tr>
+  </tbody>
+</table>
+</div><div class="page">
+<div class="kicker">Part 5</div>
+<h1 style="font-size:20pt">Optional extras and troubleshooting</h1>
+
+<h2>Running without make (Windows or no make installed)</h2>
+<table>
+  <thead><tr><th>Instead of</th><th>Run</th></tr></thead>
+  <tbody>
+    <tr><td><code>make setup</code></td><td><code>python -m venv .venv</code> then
+        <code>.venv\Scripts\pip install -r backend/requirements.txt</code> then
+        <code>cd frontend &amp;&amp; npm install --include=dev</code></td></tr>
+    <tr><td><code>make api</code></td><td><code>.venv\Scripts\uvicorn backend.app.main:app --reload --port 8000</code></td></tr>
+    <tr><td><code>make web</code></td><td><code>cd frontend &amp;&amp; npm run dev</code></td></tr>
+    <tr><td><code>make demo</code></td><td><code>.venv\Scripts\python -m backend.data.simulate --n 60 --rate 5 --ring</code></td></tr>
+    <tr><td><code>make test</code></td><td><code>.venv\Scripts\python -m pytest backend/tests -q</code></td></tr>
+  </tbody>
+</table>
+<p class="small">On macOS and Linux replace <code>.venv\Scripts\</code> with <code>.venv/bin/</code>.</p>
+
+<h2>Optional: PostgreSQL with pgvector</h2>
+<p>The same code runs on PostgreSQL without any changes &mdash; only the connection string differs.</p>
+<pre>docker compose up -d
+export DATABASE_URL=postgresql+psycopg://sentinel:sentinel@localhost:5432/sentinel
+.venv/bin/pip install "psycopg[binary]"
+make api</pre>
+
+<h2>Optional: a live LLM instead of the fallback</h2>
+<p>Add one of these to <code>.env</code> and restart the API. The console top bar will change from
+"LLM offline" to the model name, and case summaries will be written by the model.</p>
+<pre><span class="c"># Option A - Anthropic API</span>
+ANTHROPIC_API_KEY=sk-ant-...
+LLM_BACKEND=anthropic
+
+<span class="c"># Option B - the same model on AWS Bedrock (uses your IAM role or profile)</span>
+LLM_BACKEND=bedrock
+AWS_REGION=ap-south-1</pre>
+<p class="small">Either way the key is read from the environment only. Nothing is stored in the code
+and <code>.env</code> is git-ignored.</p>
+
+<h2>Troubleshooting</h2>
+<table>
+  <thead><tr><th>Symptom</th><th>Cause and fix</th></tr></thead>
+  <tbody>
+    <tr><td>Vite fails: <i>Could not resolve 'vite'</i></td>
+        <td><code>NODE_ENV=production</code> makes npm skip dev packages. Run
+            <code>cd frontend &amp;&amp; npm install --include=dev</code>.</td></tr>
+    <tr><td>Console shows "No applications yet"</td>
+        <td>The database is empty &mdash; run <code>make demo</code> in a third terminal.</td></tr>
+    <tr><td>Login fails with "Invalid credentials"</td>
+        <td>The passwords in <code>.env</code> were set <i>after</i> the first API start, so the accounts
+            already exist with the old ones. Delete <code>sentinel.db</code> and restart the API.</td></tr>
+    <tr><td>No "Retrain from feedback" button</td>
+        <td>You are signed in as the analyst. Retraining is admin-only &mdash; sign in as
+            <code>admin@sentinel.local</code>.</td></tr>
+    <tr><td>Retrain returns 403</td>
+        <td>Same reason as above &mdash; the endpoint requires the admin role.</td></tr>
+    <tr><td>"Session expired &mdash; sign in again"</td>
+        <td>Tokens last 60 minutes, and restarting the API invalidates them if no
+            <code>JWT_SECRET</code> is set in <code>.env</code>. Sign in again.</td></tr>
+    <tr><td>Port 8000 or 5173 already in use</td>
+        <td>Run on another port (see page 3), or stop the other process:
+            <code>lsof -ti:8000 | xargs kill</code>.</td></tr>
+    <tr><td>Everything looks stale</td>
+        <td>Reset completely: <code>rm -f sentinel.db *.joblib</code> then restart the API. The models
+            retrain automatically in about five seconds.</td></tr>
+  </tbody>
+</table>
+</div><div class="page">
+<div class="kicker">Reference</div>
+<h1 style="font-size:20pt">Command and API reference</h1>
+
+<h2>Every command in one place</h2>
+<table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>make setup</code></td><td>Creates the venv, installs backend and frontend packages</td></tr>
+    <tr><td><code>make api</code></td><td>Runs the API on port 8000 (docs at <code>/docs</code>)</td></tr>
+    <tr><td><code>make web</code></td><td>Runs the analyst console on port 5173</td></tr>
+    <tr><td><code>make demo</code></td><td>Sends 60 simulated applications, including a fraud ring</td></tr>
+    <tr><td><code>make test</code></td><td>Runs the 20 tests</td></tr>
+    <tr><td><code>python deck/build.py --pdf</code></td><td>Rebuilds the solution deck PDF</td></tr>
+    <tr><td><code>python deck/guide.py --pdf</code></td><td>Rebuilds this runbook</td></tr>
+  </tbody>
+</table>
+
+<h2>API endpoints</h2>
+<table>
+  <thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>POST</td><td><code>/v1/auth/login</code></td><td>Get a JWT (valid 60 minutes)</td></tr>
+    <tr><td>GET</td><td><code>/v1/me</code></td><td>Current user and role</td></tr>
+    <tr><td>POST</td><td><code>/v1/applications/score</code></td><td><b>Score one application in real time</b></td></tr>
+    <tr><td>GET</td><td><code>/v1/applications</code></td><td>Case queue, filterable by decision</td></tr>
+    <tr><td>GET</td><td><code>/v1/applications/{id}</code></td><td>Full case: features, evidence, typologies, summary</td></tr>
+    <tr><td>POST</td><td><code>/v1/applications/{id}/feedback</code></td><td>Analyst verdict (fraud / legitimate)</td></tr>
+    <tr><td>GET</td><td><code>/v1/model/info</code></td><td>Model metrics, weights and thresholds in use</td></tr>
+    <tr><td>POST</td><td><code>/v1/model/retrain</code></td><td>Retrain from feedback (admin only)</td></tr>
+    <tr><td>GET</td><td><code>/v1/metrics</code></td><td>Operational metrics for the dashboard</td></tr>
+    <tr><td>GET</td><td><code>/health</code></td><td>Liveness check</td></tr>
+  </tbody>
+</table>
+
+<h2>Scoring one application from the terminal</h2>
+<p>Useful if you want to show the raw API response on camera instead of the UI.</p>
+<pre>TOKEN=$(curl -s -X POST localhost:8000/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"analyst@sentinel.local","password":"SentinelDemo!2026"}' \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)['access_token'])")
+
+curl -s -X POST localhost:8000/v1/applications/score \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d @backend/data/sample_application.json | python3 -m json.tool</pre>
+<p>The response contains the decision, the risk score, the three component scores, the ranked evidence
+and the matched typologies &mdash; everything the console displays.</p>
+
+<div class="box" style="margin-top:14pt"><b>Repository</b><br>
+<code>https://github.com/Deva2712/synchro</code><br>
+<span class="small">README.md has the architecture diagram, the full API reference, the security notes
+and the list of known limitations.</span></div>
+</div></body></html>

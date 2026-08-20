@@ -69,6 +69,15 @@ seconds later and attached to the case file.
 
 ---
 
+## Documents
+
+| File | What it is |
+|---|---|
+| [`deck/Sentinel.pdf`](deck/Sentinel.pdf) | 18-slide solution deck — approach, insights, results |
+| [`deck/Demo-Guide.pdf`](deck/Demo-Guide.pdf) | Demo runbook — requirements, setup, how to run, the demo script, troubleshooting |
+
+Both are rebuilt with `python deck/build.py --pdf` and `python deck/guide.py --pdf`.
+
 ## Quickstart
 
 ```bash
