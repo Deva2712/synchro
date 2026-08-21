@@ -6,6 +6,7 @@ import MetricsBar from './components/MetricsBar.jsx'
 import Queue from './components/Queue.jsx'
 
 const REFRESH_MS = 2000
+const THEME_KEY = 'sentinel.theme'
 
 export default function App() {
   const [signedIn, setSignedIn] = useState(Boolean(getToken()))
@@ -16,6 +17,12 @@ export default function App() {
   const [filter, setFilter] = useState('ALL')
   const [error, setError] = useState('')
   const [retraining, setRetraining] = useState(null)
+  const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'dark')
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem(THEME_KEY, theme)
+  }, [theme])
 
   const refresh = useCallback(async () => {
     try {
@@ -67,7 +74,7 @@ export default function App() {
         </div>
         <div className="topbar-right">
           {model && (
-            <span className="muted small">
+            <span className="status-line">
               model {model.metrics.roc_auc} ROC-AUC · trained {new Date(model.trained_at).toLocaleString('en-IN')} ·
               LLM {model.llm.live ? `live (${model.llm.model})` : 'offline — deterministic fallback'}
             </span>
@@ -77,19 +84,25 @@ export default function App() {
               {retraining === 'running' ? 'Retraining…' : 'Retrain from feedback'}
             </button>
           )}
+          <button className="ghost icon" aria-label="Switch colour theme"
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
           <button className="ghost" onClick={() => { clearSession(); setSignedIn(false) }}>Sign out</button>
         </div>
       </header>
 
       {error && <p className="error banner" role="alert">{error}</p>}
-      {retraining && retraining !== 'running' && <p className="banner ok">{retraining}</p>}
+      {retraining && retraining !== 'running' && (
+        <p className="banner ok" role="status">{retraining}</p>
+      )}
 
       <main>
         <MetricsBar metrics={metrics} model={model} />
         <div className="split">
           <Queue rows={visible} selectedId={selected} onSelect={setSelected}
                  filter={filter} onFilter={setFilter} />
-          <CaseDetail applicationId={selected} onReviewed={refresh} />
+          <CaseDetail key={selected || 'none'} applicationId={selected} onReviewed={refresh} />
         </div>
       </main>
     </div>

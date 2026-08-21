@@ -150,7 +150,7 @@ SLIDES.append(slide("What I learned while building", "Four things that shaped th
 # 4 - solution
 SLIDES.append(slide("What I built", "One fast decision with four possible outcomes", """
 <div class="cols c4" style="margin-bottom:20px">
-  <div class="card"><span class="pill p-allow">&#10003; ALLOW</span><p style="margin-top:10px">Application continues normally. 83% of the demo traffic.</p></div>
+  <div class="card"><span class="pill p-allow">&#10003; ALLOW</span><p style="margin-top:10px">Application continues normally. Two thirds of the demo traffic.</p></div>
   <div class="card"><span class="pill p-step">! STEP UP</span><p style="margin-top:10px">Ask for OTP or liveness check. Extra friction, not a rejection.</p></div>
   <div class="card"><span class="pill p-review">&#8981; REVIEW</span><p style="margin-top:10px">Held for a fraud analyst, with the case already prepared.</p></div>
   <div class="card"><span class="pill p-block">&#10005; BLOCK</span><p style="margin-top:10px">Blocked and raised as a fraud case.</p></div>
@@ -340,17 +340,20 @@ SLIDES.append(slide("Results", "Measured on test data and on the live demo", """
   </div>
   <div>
     <table>
-      <thead><tr><th>Live demo run</th><th class="right">Value</th></tr></thead>
+      <thead><tr><th>Live demo run (on PostgreSQL)</th><th class="right">Value</th></tr></thead>
       <tbody>
-        <tr><td>Applications scored</td><td class="right"><b>65</b></td></tr>
-        <tr><td>Decision time p50</td><td class="right"><b>18 ms</b></td></tr>
-        <tr><td>Decision time p95</td><td class="right"><b>22 ms</b></td></tr>
-        <tr><td>Allowed without friction</td><td class="right"><b>83.1%</b></td></tr>
-        <tr><td>Review or blocked</td><td class="right"><b>13.9%</b></td></tr>
+        <tr><td>Applications scored</td><td class="right"><b>60</b></td></tr>
+        <tr><td>Decision time p50</td><td class="right"><b>29 ms</b></td></tr>
+        <tr><td>Decision time p95</td><td class="right"><b>37 ms</b></td></tr>
+        <tr><td>Allowed without friction</td><td class="right"><b>66.7%</b></td></tr>
+        <tr><td>Review or blocked</td><td class="right"><b>23.3%</b></td></tr>
         <tr><td>Tests passing</td><td class="right"><b>20 / 20</b></td></tr>
       </tbody>
     </table>
-    <div class="card" style="margin-top:14px"><h3>About the 68% precision</h3>
+    <p class="small" style="margin-top:10px">The demo stream deliberately contains about 15% fraud plus a device-farm burst, so the
+    straight-through rate here is much lower than a real portfolio would see. On SQLite the same run
+    decides in 18 ms p50; the extra milliseconds above are the hop to the database container.</p>
+    <div class="card" style="margin-top:10px"><h3>About the 68% precision</h3>
       <p class="small" style="margin-top:6px">It means roughly one in three reviewed cases turns out to be genuine. Those cases are only <i>reviewed</i>, not blocked. The thresholds are set so that blocking needs strong evidence, while suspicion only adds an extra check.</p></div>
   </div>
 </div>

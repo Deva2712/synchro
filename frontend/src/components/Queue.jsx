@@ -20,6 +20,10 @@ export default function Queue({ rows, selectedId, onSelect, filter, onFilter }) 
 
       <div className="table-scroll">
         <table>
+          <colgroup>
+            <col className="c-time" /><col className="c-name" /><col className="c-amount" />
+            <col className="c-risk" /><col className="c-decision" /><col />
+          </colgroup>
           <thead>
             <tr>
               <th>Time</th><th>Applicant</th><th className="num">Amount</th>
@@ -39,15 +43,15 @@ export default function Queue({ rows, selectedId, onSelect, filter, onFilter }) 
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && onSelect(row.application_id)}>
                 <td className="mono muted">{time(row.created_at)}</td>
-                <td>
-                  {row.applicant_name}
-                  {row.label === 1 && <span className="tag tag-fraud">confirmed fraud</span>}
+                <td className="cell-name">
+                  <span className="name">{row.applicant_name}</span>
+                  {row.label === 1 && <span className="tag tag-fraud">fraud</span>}
                   {row.label === 0 && <span className="tag">cleared</span>}
                 </td>
                 <td className="num mono">{money.format(row.amount)}</td>
                 <td><RiskMeter score={row.risk_score} decision={row.decision} /></td>
                 <td><DecisionChip decision={row.decision} /></td>
-                <td className="muted reason">{row.top_reason || '—'}</td>
+                <td className="reason" title={row.top_reason}>{row.top_reason || '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -59,8 +63,10 @@ export default function Queue({ rows, selectedId, onSelect, filter, onFilter }) 
 
 export function RiskMeter({ score, decision }) {
   return (
-    <span className="meter" title={`Risk ${score.toFixed(2)}`}>
-      <span className={`meter-fill seg-${decision}`} style={{ width: `${score * 100}%` }} />
+    <span className="meter" role="img" aria-label={`Risk score ${score.toFixed(2)} of 1`}>
+      <span className="meter-track">
+        <span className={`meter-fill seg-${decision}`} style={{ width: `${Math.max(score, 0.02) * 100}%` }} />
+      </span>
       <span className="meter-value mono">{score.toFixed(2)}</span>
     </span>
   )

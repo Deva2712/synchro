@@ -74,7 +74,9 @@ seconds later and attached to the case file.
 | File | What it is |
 |---|---|
 | [`deck/Sentinel.pdf`](deck/Sentinel.pdf) | 18-slide solution deck — approach, insights, results |
-| [`deck/Demo-Guide.pdf`](deck/Demo-Guide.pdf) | Demo runbook — requirements, setup, how to run, the demo script, troubleshooting |
+| [`deck/Demo-Guide.pdf`](deck/Demo-Guide.pdf) | Demo runbook — requirements, setup, how to run, troubleshooting |
+| [`COMPLIANCE.md`](COMPLIANCE.md) | Every hackathon requirement, where it lives, and how to demonstrate it |
+| [`SCRIPT.md`](SCRIPT.md) | Word-for-word script for the demo recording |
 
 Both are rebuilt with `python deck/build.py --pdf` and `python deck/guide.py --pdf`.
 
@@ -182,8 +184,8 @@ fraud cases deliberately "stealthy", 1.5 % label noise):
 | Recall at the review threshold | **82.2 %** |
 | Precision at the review threshold | 68.2 % |
 | False-positive rate | **3.9 %** |
-| Decision latency p50 / p95 | **18 ms / 22 ms** |
-| Straight-through rate on live demo traffic | 83 % |
+| Decision latency p50 / p95 | **18 ms / 22 ms** on SQLite, 29 ms / 37 ms on PostgreSQL |
+| Straight-through rate on live demo traffic | 67 % (the demo stream is ~15 % fraud plus a ring) |
 | Tests passing | 20 / 20 |
 
 The training data is synthetic but deliberately not easy: 40 % of the fraud cases only
