@@ -319,7 +319,7 @@ SLIDES.append(slide("Learning from analysts", "How the system improves over time
   <div class="card"><span class="lbl">Step 3 &mdash; safety check</span><h3 style="margin-top:8px">Promote only if it is not worse</h3>
     <p style="margin-top:8px">If the new model loses more than <b>0.01 ROC-AUC</b> compared to the current one, it is <b>not promoted</b>. The API reports this and the old model keeps running.</p></div>
 </div>
-<div class="callout" style="margin-top:20px">In testing with a single labelled case, ROC-AUC moved from 0.9386 to 0.9339. That is within the noise you would expect from one sample, and below the promotion bar, so the model was not swapped. I added this check after seeing that a few bad labels could otherwise quietly make the system worse.</div>
+<div class="callout" style="margin-top:20px">In testing with a single labelled case, ROC-AUC moved from 0.9386 to 0.9339 &mdash; a drop of 0.005, which is what one sample of noise looks like. That is inside the 0.01 tolerance, so the new model was promoted and the API returned both numbers. A larger drop would have kept the old model serving. I added this check after realising a few bad labels could otherwise quietly make the system worse.</div>
 """, 11))
 
 # 12 - results
