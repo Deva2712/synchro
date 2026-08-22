@@ -1,6 +1,9 @@
-# PostgreSQL + pgvector for the production storage path.
-#   docker compose up -d
-#   export DATABASE_URL=postgresql+psycopg://sentinel:sentinel@localhost:5432/sentinel
+# Runs the whole prototype: PostgreSQL with pgvector, plus the API and the
+# React console in one image.
+#
+#   docker compose up --build     then open http://localhost:8000
+#
+# Passwords come from .env (copy .env.example first). Nothing is hardcoded here.
 services:
   db:
     image: pgvector/pgvector:pg16
@@ -16,5 +19,25 @@ services:
       interval: 5s
       retries: 10
 
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://sentinel:${POSTGRES_PASSWORD:-sentinel}@db:5432/sentinel
+      JWT_SECRET: ${JWT_SECRET:-}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@sentinel.local}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_ANALYST_EMAIL: ${SEED_ANALYST_EMAIL:-analyst@sentinel.local}
+      SEED_ANALYST_PASSWORD: ${SEED_ANALYST_PASSWORD:-}
+      LLM_BACKEND: ${LLM_BACKEND:-anthropic}
+      LLM_ENABLED: ${LLM_ENABLED:-auto}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports: ["8000:8000"]
+    volumes:
+      - sentinel-models:/app/data     # trained model survives a container restart
+
 volumes:
   sentinel-db:
+  sentinel-models:

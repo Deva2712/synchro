@@ -4,16 +4,26 @@
 
 ## Setup before recording
 
+**Option A — everything in Docker** (simplest, one command):
+
 ```bash
-docker compose up -d
-rm -f sentinel_model.joblib
+docker compose up --build -d                 # wait for both containers to be healthy
 docker compose exec db psql -U sentinel -d sentinel -c "TRUNCATE applications;"
+```
+Console and API are both on **http://localhost:8000**. Traffic:
+`docker compose exec app python -m backend.data.simulate --n 60 --rate 5 --ring --password "$SEED_ANALYST_PASSWORD"`
+
+**Option B — local, if you want the terminals visible on camera:**
+
+```bash
+docker compose up -d db
+rm -f sentinel_model.joblib
 make api      # terminal 1, wait for "Model ready"
-make web      # terminal 2
+make web      # terminal 2 -> localhost:5173
               # terminal 3 free for `make demo`
 ```
 
-Open `localhost:5173`, leave the login screen showing. Notifications off, browser at 100%.
+Leave the login screen showing. Notifications off, browser at 100%.
 
 ---
 

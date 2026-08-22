@@ -80,7 +80,27 @@ seconds later and attached to the case file.
 
 Both are rebuilt with `python deck/build.py --pdf` and `python deck/guide.py --pdf`.
 
-## Quickstart
+## Quickstart — Docker (recommended, nothing to install but Docker)
+
+```bash
+git clone https://github.com/Deva2712/synchro.git && cd synchro
+cp .env.example .env          # then set the three values noted inside
+docker compose up --build     # first build takes 3-5 minutes
+```
+
+Open **http://localhost:8000** — the console and the API are the same origin.
+OpenAPI docs are at `/docs`. Push demo traffic through it with:
+
+```bash
+docker compose exec app python -m backend.data.simulate --n 60 --rate 5 --ring \
+  --password "$SEED_ANALYST_PASSWORD"
+```
+
+Two containers come up: `db` (PostgreSQL 16 + pgvector) and `app` (the API with the
+built React console inside it). Stop with `docker compose down`, or
+`docker compose down -v` to also wipe the data.
+
+## Quickstart — local development (hot reload)
 
 ```bash
 # 1. Configure — nothing is hardcoded
@@ -105,10 +125,12 @@ knowledge base. No API keys are required to run the demo — with no LLM credent
 explanation layer falls back to a deterministic template, which is the designed failure
 mode, not a stub.
 
-**PostgreSQL instead of SQLite** (optional):
+In development the console runs on `:5173` with hot reload and proxies to the API on
+`:8000`. To use PostgreSQL for the local path too, start just the database and point
+`DATABASE_URL` at it:
 
 ```bash
-docker compose up -d
+docker compose up -d db
 export DATABASE_URL=postgresql+psycopg://sentinel:sentinel@localhost:5432/sentinel
 pip install "psycopg[binary]"
 ```

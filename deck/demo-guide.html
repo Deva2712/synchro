@@ -107,6 +107,12 @@ default. Page 6 lists the equivalent commands to run directly, or use WSL / Git 
 cd synchro</pre>
 </div></div>
 
+<div class="note"><b>The fastest path is Docker.</b> If Docker Desktop is installed, steps 2 and 3
+below are replaced by <code>cp .env.example .env</code> (fill in the three values) and
+<code>docker compose up --build</code>, then open <b>http://localhost:8000</b>. That needs no Python
+and no Node at all. Page 3 covers it. The steps below are the local development path, which gives you
+hot reload and visible terminals.</div>
+
 <div class="step"><div class="n">2</div><div>
 <h3>Create the configuration file</h3>
 <p>The project reads every setting from environment variables, so nothing sensitive lives in the code.
@@ -156,7 +162,24 @@ all working. This is also a good thing to show on camera at the start of the rec
 <h1 style="font-size:20pt">Running the backend and frontend</h1>
 <p class="lead">Three terminal tabs, all opened in the project folder. Start them in this order.</p>
 
-<h2>Terminal 1 &mdash; the backend API</h2>
+<h2>Option A &mdash; everything in Docker (no Python or Node needed)</h2>
+<pre>cp .env.example .env      <span class="c"># set JWT_SECRET and the two seed passwords</span>
+docker compose up --build <span class="c"># first build takes 3-5 minutes</span></pre>
+<p>Two containers start: <code>db</code> (PostgreSQL 16 with pgvector) and <code>app</code> (the API
+with the React console built inside it). Check them with:</p>
+<pre>docker compose ps
+<span class="c">NAME              STATUS</span>
+<span class="c">synchrome-app-1   Up (healthy)</span>
+<span class="c">synchrome-db-1    Up (healthy)</span></pre>
+<p>Open <b>http://localhost:8000</b> &mdash; console and API on the same origin, docs at
+<code>/docs</code>. Push demo traffic through it:</p>
+<pre>docker compose exec app python -m backend.data.simulate   --n 60 --rate 5 --ring --password "$SEED_ANALYST_PASSWORD"</pre>
+<p class="small">Stop with <code>docker compose down</code>; add <code>-v</code> to wipe the data too.
+If only <code>db</code> appears in Docker Desktop, you are on an old version of the compose file &mdash;
+pull the latest code, it now contains an <code>app</code> service as well.</p>
+
+<h2>Option B &mdash; local development (hot reload)</h2>
+<h3>Terminal 1 &mdash; the backend API</h3>
 <pre>make api</pre>
 <p>Starts FastAPI on <b>http://127.0.0.1:8000</b>. On the very first start it trains the models from
 synthetic traffic (about 5 seconds) and loads the fraud typology knowledge base.</p>
@@ -165,7 +188,7 @@ synthetic traffic (about 5 seconds) and loads the fraud typology knowledge base.
 <p><b>Check it:</b> open <code>http://127.0.0.1:8000/docs</code> &mdash; the interactive OpenAPI page listing
 every endpoint. Worth showing on camera: it proves the project is API-first and not just a UI.</p>
 
-<h2>Terminal 2 &mdash; the analyst console</h2>
+<h3>Terminal 2 &mdash; the analyst console</h3>
 <pre>make web</pre>
 <p>Starts Vite on <b>http://localhost:5173</b>. It proxies <code>/v1</code> calls through to the API, so the
 browser only ever talks to one origin and no API URL is hardcoded in the bundle.</p>
@@ -182,7 +205,7 @@ browser only ever talks to one origin and no API URL is hardcoded in the bundle.
 <p class="small">Sign in as <b>admin</b> for the recording so the "Retrain from feedback" button is
 visible in the top bar.</p>
 
-<h2>Terminal 3 &mdash; simulated application traffic</h2>
+<h3>Terminal 3 &mdash; simulated application traffic</h3>
 <pre>make demo</pre>
 <p>Sends 60 realistic applications through the API at about 5 per second, including a burst of six
 applications from one device under six different names &mdash; the fraud ring. Each line printed is a
@@ -398,6 +421,16 @@ and <code>.env</code> is git-ignored.</p>
     <tr><td>Port 8000 or 5173 already in use</td>
         <td>Run on another port (see page 3), or stop the other process:
             <code>lsof -ti:8000 | xargs kill</code>.</td></tr>
+    <tr><td>Docker shows only the <code>db</code> container</td>
+        <td>You have an older <code>docker-compose.yml</code>. Pull the latest code &mdash; it defines an
+            <code>app</code> service too &mdash; then <code>docker compose up --build</code>.</td></tr>
+    <tr><td>"This site can't be reached" on localhost</td>
+        <td>Nothing is serving that port. With Docker use <b>:8000</b> (not :5173) and check
+            <code>docker compose ps</code> shows <code>app</code> healthy; locally make sure both
+            <code>make api</code> and <code>make web</code> are running.</td></tr>
+    <tr><td>App container exits on first start</td>
+        <td>Check <code>docker compose logs app</code>. Usually the database was not ready &mdash;
+            <code>docker compose up</code> again; the app waits for the db healthcheck.</td></tr>
     <tr><td>Everything looks stale</td>
         <td>Reset completely: <code>rm -f sentinel.db *.joblib</code> then restart the API. The models
             retrain automatically in about five seconds.</td></tr>
@@ -416,6 +449,9 @@ and <code>.env</code> is git-ignored.</p>
     <tr><td><code>make web</code></td><td>Runs the analyst console on port 5173</td></tr>
     <tr><td><code>make demo</code></td><td>Sends 60 simulated applications, including a fraud ring</td></tr>
     <tr><td><code>make test</code></td><td>Runs the 20 tests</td></tr>
+    <tr><td><code>make docker</code></td><td>Builds and runs everything in containers on port 8000</td></tr>
+    <tr><td><code>make docker-demo</code></td><td>Pushes simulated traffic through the containerised API</td></tr>
+    <tr><td><code>make docker-down</code></td><td>Stops the containers</td></tr>
     <tr><td><code>python deck/build.py --pdf</code></td><td>Rebuilds the solution deck PDF</td></tr>
     <tr><td><code>python deck/guide.py --pdf</code></td><td>Rebuilds this runbook</td></tr>
   </tbody>

@@ -47,7 +47,7 @@ Legend for the demo column: 🖥️ = show on screen, 💬 = say it out loud, �
 
 | Requirement | Status | Where | How to demonstrate |
 |---|---|---|---|
-| Deployment platform | 🟡 Partial | Runs in Docker locally; the app is stateless and config-driven, so it is deploy-ready (ECS/Fargate + RDS + Secrets Manager). **Not deployed to a live AWS account** | 💬 Be honest: "runs in Docker, designed for ECS + RDS; I did not have an AWS account to deploy into" |
+| Deployment platform | 🟡 Partial | Fully containerised — `docker compose up` builds the console, runs the API as a non-root user and starts PostgreSQL with pgvector, with healthchecks and a persistent volume. The image is what would ship to ECS/Fargate + RDS. **Not deployed to a live AWS account** | 🖥️ `docker compose ps` showing both containers healthy; 💬 "the image is deployment-ready; I had no AWS account to deploy into" |
 | Secure storage and access management | ✅ Done | All secrets from environment variables, IAM/credential chain for AWS, `.env` git-ignored, roles enforced on the API | 🖥️ `cat .env.example` — every value blank |
 | Monitoring / logging | 🟡 Partial | Structured startup, retrain and LLM-failure logs; `/health` and `/v1/metrics` endpoints feed the dashboard | 🖥️ The API terminal output and the KPI row |
 

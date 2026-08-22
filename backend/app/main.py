@@ -6,12 +6,14 @@ origination system is the other.
 """
 import logging
 import os
+import pathlib
 import secrets
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 
 from . import config, decision, knowledge, llm, model as model_layer, security
@@ -253,3 +255,11 @@ async def metrics(user: dict = Depends(security.current_user), hours: int = Quer
 @app.get("/health", tags=["ops"])
 async def health():
     return {"status": "ok", "model_trained_at": STATE.get("model").trained_at if STATE.get("model") else None}
+
+
+# The built React console, if it is present (it is, in the Docker image). Mounted
+# last so every API route above takes precedence over the static files.
+_console = pathlib.Path(__file__).resolve().parents[2] / "frontend" / "dist"
+if _console.is_dir():
+    app.mount("/", StaticFiles(directory=_console, html=True), name="console")
+    log.info("Serving the console from %s", _console)
